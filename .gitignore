@@ -1,0 +1,11 @@
+# Exclude node_modules for both frontend and backend
+frontend/node_modules/
+backend/node_modules/
+
+# Optional: Exclude build artifacts
+frontend/dist/
+backend/build/
+
+# Environment files
+frontend/.env
+backend/.env
