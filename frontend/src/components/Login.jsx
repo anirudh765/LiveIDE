@@ -16,23 +16,20 @@ const Login = ({ onLogin }) => {
         email,
         password,
       },{
-        withCredentials: true // This sends cookies with requests
+        withCredentials: true 
       });
 
-      const { username, email: userEmail } = response.data; // Safely destructure response
+      const { username, email: userEmail } = response.data;
 
       const token = response.data.token;
       document.cookie = `userToken=${token}; path=/; HttpOnly; Secure`; 
 
-      console.log("Login successful, username:", username, "email:", userEmail); // Debugging log
-
       if (username) {
-        console.log("navigating...");
-        onLogin(username); // Update session state in App.js
-        navigate(`/dashboard`); // Redirect to dashboard
+        onLogin(username); 
+        navigate(`/dashboard`); 
       }
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message); // Log error details
+      console.error("Login error:", error.response?.data || error.message);
       alert("Invalid credentials or Server error");
     }
 };

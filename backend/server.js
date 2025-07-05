@@ -1,10 +1,8 @@
 const express = require("express");
-const http = require("http"); 
-const os = require("os");
+const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { execSync, exec, spawn } = require("child_process");
-const pty = require("node-pty-prebuilt-multiarch");
 const { Server } = require("socket.io");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -14,7 +12,6 @@ const Users = require("./models/User");
 const Room = require("./models/Room");
 const { hashPassword, comparePasswords } = require('./hashPassword');
 const session = require("express-session");
-const mongoose = require("mongoose");
 const MongoStore = require("connect-mongo")
 require('dotenv').config();
 const jwt = require("jsonwebtoken");
@@ -25,7 +22,7 @@ const docker = new Docker();
 
 const app = express();
 const server = http.createServer(app);
-//  const io = new Server(server);
+
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
@@ -42,7 +39,6 @@ app.use(cookieParser());
 const JWTSECRET_KEY = process.env.JWT_SECRET 
 const verifyToken = (req, res, next) => {
   const token = req.cookies.userToken
-  //console.log("TOKEN :: ",token);
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -84,7 +80,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(bodyParser.json());
-//app.use(cors({ origin: "*" }));
+
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 app.use(session({
@@ -92,19 +88,14 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI, // Same as your existing MongoDB URL
-    collectionName: "sessions", // Stores sessions in "sessions" collection
-    ttl: 24 * 60 * 60, // Session expiry (1 day)
+    mongoUrl: process.env.MONGO_URI, 
+    collectionName: "sessions", 
+    ttl: 24 * 60 * 60, 
     autoRemove: "native"
   }),
   proxy: true,
   cookie: { secure: false, httpOnly: true, sameSite: "lax" ,maxAge: 24 * 60 * 60 * 1000 }
 }));
-
-// app.use((req, res, next) => {
-//   console.log("Session Data:", req.session);
-//   next();
-// });
 
 const BUCKET_NAME = "finaltask";
 const BASE_FOLDER = "base/";
@@ -135,11 +126,6 @@ const getImageForType = (type) => {
   }
 };
 
-const stripAnsi = (str) =>
-  str.replace(
-    /[\u001b\u009b][[()#;?]*(?:(?:[a-zA-Z\d]*(?:;[a-zA-Z\d]*)*)?\u0007|(?:\d{1,4}(?:;\d{0,4})*)?[a-zA-Z\d])/g,
-    ""
-  );
  
 const roomParticipants = {};   
 
@@ -158,7 +144,7 @@ io.on("connection", (socket) => {
     const newUserId = userIdcounter++;
     userId = newUserId;
     if (!userId) {
-      //   socket.emit("ERROR", "userId is required.");
+      
       console.log("userId is required");
       return;
     }
@@ -166,17 +152,16 @@ io.on("connection", (socket) => {
     if (userContainers[userId]) {
       console.log(`User ${userId} reconnected. Reusing existing container.`);
       userContainers[userId].socket = socket;
-      //socket.emit("RECONNECTED", "Reconnected to existing container.");
+     
       console.log("Reconnected to existing container.");
       return;
     }
 
     const image = getImageForType(envType);
-    // const assignedPort =
-    //   freePorts.length > 0 ? freePorts.shift() : nextAvailablePort;
+  
       const assignedPort = nextAvailablePort;
-nextAvailablePort++;
-    console.log(`Spinning up container with image: ${image}`);
+      nextAvailablePort++;
+      console.log(`Spinning up container with image: ${image}`);
 
     const cmd =
       envType === "python"
@@ -289,7 +274,6 @@ nextAvailablePort++;
       });
     } catch (error) {
       console.log("showing error : ", error);
-      //socket.emit("ERROR", Container error: ${error.message});
       socket.emit(error);
     }
   });
@@ -298,7 +282,6 @@ nextAvailablePort++;
     console.log(command);
     const userData = userContainers[userId];
     console.log("command userId", userId);
-    //console.log("from command : ",userData)
     if (!userData) return;
     const { container } = userData;
 
@@ -347,22 +330,6 @@ nextAvailablePort++;
     const userData = userContainers[userId];
    
     const container = userData.container;
-    //console.log("CONTAINER : ", container);
-
-    // const exec = await container.exec({
-    //   AttachStdin: true,
-    //   AttachStdout: true,
-    //   AttachStderr: true,
-    //   Tty: true,
-    //   Cmd: [
-    //     "/bin/sh",
-    //     "-c",
-    //     `mkdir -p ${workingDir} && echo '${content.replace(
-    //       /'/g,
-    //       "'\\''"
-    //     )}' > ${filePath}`,
-    //   ],
-    // });
 
     const exec = await container.exec({
       AttachStdin: true,
@@ -598,9 +565,7 @@ app.post(`/:frameworkname/:selectedFile/:foldername`, async (req, res) => {
   const framework = req.params.frameworkname;
   const filename = req.params.selectedFile;
   const foldername = req.params.foldername;
-  console.log(framework);
-  console.log(filename);
-  console.log(foldername);
+
   const { hostPort } = req.body;
   if (framework == "nodejs") {
     try {
@@ -959,7 +924,6 @@ const getFileName = (filename) => {
 app.post("/newfolder", verifyToken,async (req, res) => {
   const { frameworkname, foldername } = req.body;
   const username = req.user.username;
-  console.log("Request body:", req.body);
 
   if (!username || !frameworkname || !foldername) {
     return res.status(400).send("Missing required fields");
@@ -1017,31 +981,6 @@ app.post("/newfolder", verifyToken,async (req, res) => {
     res.status(500).send("Server error while creating folder");
   }
 });
-
-// app.put("/codeUpdate", async (req, res) => {
-//   const { fileKey, newCode, foldername } = req.body;
-
-//   if (!fileKey || !newCode) {
-//     return res.status(400).json({ error: "File key and new code are required." });
-//   }
-
-//   try {
-//     const s3Params = {
-//       Bucket: BUCKET_NAME,
-//       Key: fileKey,
-//       Body: newCode,
-//     };
-//     const s3Response = await s3Client.putObject(s3Params).promise();
-
-//     const localFilePath = path.join(__dirname, foldername, path.basename(fileKey));
-//     fs.writeFileSync(localFilePath, newCode, "utf-8");
-
-//     res.status(200).json({ message: "File updated successfully", s3Response });
-//   } catch (error) {
-//     console.error("Error in updating code:", error);
-//     res.status(500).send("Error in updating code");
-//   }
-// });
 
 app.put("/codeUpdate", async (req, res) => {
   const { fileKey, newCode } = req.body; // Extract file key and updated content
@@ -1117,7 +1056,6 @@ app.post("/addFile/:framework/:folder/:filename", async (req, res) => {
         await s3Client.putObject(newParams).promise();
 
         const localDirectory = path.join(__dirname, foldername);
-        console.log(`Local directory path: ${localDirectory}`);
 
         if (!fs.existsSync(localDirectory)) {
           console.log(`${foldername} directory does not exist. Creating it...`);
@@ -1127,7 +1065,6 @@ app.post("/addFile/:framework/:folder/:filename", async (req, res) => {
         }
 
         const localFilePath = path.join(localDirectory, newFileName);
-        console.log(`Writing file to: ${localFilePath}`);
 
         try {
           fs.writeFileSync(localFilePath, copyFileContent, "utf-8");
@@ -1208,7 +1145,7 @@ app.delete("/deleteFile", async (req, res) => {
 
 app.get("/extensions/:framework", async (req, res) => {
   const frameworkname = req.params.framework;
-  //console.log("Framework in getextensions server:",frameworkname);
+
   try {
     const fileData = await s3Client
       .listObjectsV2({ Bucket: BUCKET_NAME, Prefix: `base/${frameworkname}/` })
@@ -1216,10 +1153,9 @@ app.get("/extensions/:framework", async (req, res) => {
     const extensions = fileData.Contents.map((file) => {
       const key = file.Key;
       const ext = key.slice(key.lastIndexOf("."));
-     // console.log(ext);
+     
       return ext;
     });
-    // res.send(200, extensions);
     res.status(200).send(extensions);
   } catch (error) {
     console.error("Error in fetching extensions", error);
@@ -1232,23 +1168,19 @@ app.post("/user/signup", async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    // Check if username exists
     const existingUsername = await Users.findOne({ username });
     if (existingUsername) {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    // Check if email exists
     const existingEmail = await Users.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Hash the password and create the user
     const hashedPassword = await hashPassword(password);
     await Users.create({ username, email, password: hashedPassword });
 
-    // Correct response
     res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     console.error("Signup Error:", error); // Log error for debugging
@@ -1282,30 +1214,6 @@ app.post("/user/login", async (req, res) => {
 
 
     if (await comparePasswords(plainPassword, hashedPassword)) {
-      // 🔹 Ensure session is properly initialized
-      /*if (!req.session) {
-        return res.status(500).json({ message: "Session is not initialized" });
-      }
-
-      // Set user details in session
-      req.session.username = user.username;
-      req.session.email = user.email;
-      
-      // Force save session to MongoDB before responding
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ message: "Error saving session" });
-        }
-
-        console.log("User logged in. Session Data:", req.session); // Debugging log
-       
-        return res.status(200).json({
-          message: "Login successful",
-          username: user.username,
-          email: user.email,
-        });
-      });*/
       return res.status(200).json({
         message: "Login successful",
         username: user.username,
@@ -1325,7 +1233,6 @@ app.post("/user/login", async (req, res) => {
 app.get("/userFolders/:username", async (req, res) => {
   const  username = req.params.username;
   try {
-    console.log("username at userfolder: ",username);
     const user = await Users.findOne({ username });
     
     if (!user) return res.status(404).send("No user found");
@@ -1338,10 +1245,9 @@ app.get("/userFolders/:username", async (req, res) => {
 
 
 app.post("/create-room",async (req, res) => {
-  const { username,roomName, creatorFolder, creatorFramework } = req.body; // Accept folder and framework details
+  const { username,roomName, creatorFolder, creatorFramework } = req.body; 
 
   try {
-    // Find the user document by username
     const user = await Users.findOne({ username });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -1357,15 +1263,14 @@ app.post("/create-room",async (req, res) => {
     const newRoom = new Room({
       roomId,
       roomName: roomName || `Room of ${username}`,
-      creatorId: user._id, // Use the user's ObjectId
-      creatorFolder,      // Add the creator's folder name
-      creatorFramework,   // Add the creator's framework name
-      users: [user._id],  // Add the creator to the users array
+      creatorId: user._id, 
+      creatorFolder,     
+      creatorFramework,  
+      users: [user._id],  
     });
 
     await newRoom.save();
 
-    // Add the room to the user's rooms array
     user.rooms.push({ roomId });
     await user.save();
 
@@ -1379,32 +1284,26 @@ app.post("/create-room",async (req, res) => {
 app.post("/join-room",async (req, res) => {
   const { username,roomId } = req.body;
   try {
-    // Find the user by username
     const user = await Users.findOne({ username });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Find the room by roomId
     const room = await Room.findOne({ roomId });
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    // Check if the user is already in the room
     if (!room.users.includes(user._id)) {
-      // Add user to the room's user list
       room.users.push(user._id);
       await room.save();
 
-      // Add the room to the user's room list if not already present
       if (!user.rooms.some((roomEntry) => roomEntry.roomId === roomId)) {
         user.rooms.push({ roomId });
         await user.save();
       }
     }
 
-    // Send the creator's folder and framework in the response
     res.status(200).json({
       message: "Successfully joined the room",
       folderFramework: room.creatorFramework,
@@ -1427,30 +1326,6 @@ app.get("/user-rooms/:username", async (req, res) => {
     res.status(500).send("Error fetching user rooms");
   }
 });
-
-// Fetch username from session (if using session-based auth)
-/*app.get("/get-username", async (req, res) => {
-  // console.log("Session in /get-username:", req.session);
-  // console.log("Session ID from request:", req.sessionID);
-
-  if (req.session?.username) {
-    return res.status(200).json({ username: req.session.username });
-  }
-
-  const sessionCollection = mongoose.connection.collection("sessions");
-  const storedSession = await sessionCollection.findOne({ _id: req.sessionID });
-
-  if (storedSession) {
-    const sessionData = JSON.parse(storedSession.session);
-    console.log("Manually retrieved session data:", sessionData);
-
-    if (sessionData.username) {
-      return res.status(200).json({ username: sessionData.username });
-    }
-  }
-
-  return res.status(401).json({ message: "Not logged in" });
-});*/
 
 app.get("/me", verifyToken, (req, res) => {
   res.status(200).json({ username: req.user.username });
@@ -1479,11 +1354,9 @@ app.post("/exit-room", async (req, res) => {
     const room = await Room.findOne({ roomId });
     if (!room) return res.status(404).json({ message: "Room not found" });
 
-    // Remove user from room.users
     room.users = room.users.filter(id => id.toString() !== user._id.toString());
     await room.save();
 
-    // Remove room from user.rooms
     user.rooms = user.rooms.filter(r => r.roomId !== roomId);
     await user.save();
 
@@ -1512,4 +1385,3 @@ app.get("/logout",async(req,res)=>{
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost : ${PORT}`);
 });
-

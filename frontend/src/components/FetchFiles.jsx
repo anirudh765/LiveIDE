@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import  { useState, useEffect } from "react";
 import axios from "axios";
 import io from "socket.io-client";
 import { useParams } from "react-router-dom";
@@ -32,8 +32,6 @@ const FetchFiles = () => {
   const [extensions, setExtensions] = useState([]);
   const [saved, setSaved] = useState(false);
   const [iframeSrc, setIframeSrc] = useState("");
-  const [textOutput, setTextOutput] = useState("");
-  const [objectData, setObjectData] = useState("");
   const [participants, setParticipants] = useState([]);
   const [editor, setEditor] = useState(null);
   const [decorations, setDecorations] = useState([]);
@@ -41,10 +39,6 @@ const FetchFiles = () => {
   const [userId, setUserId] = useState("");
   const [url , seturl] = useState("");
   const navigate = useNavigate();
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight
-  });
 
   useEffect(() => {
     if (!roomId || !username) return;
@@ -69,88 +63,30 @@ const FetchFiles = () => {
     
   }, []);
 
-
-  //changes here mark 1
-
-  // useEffect(() => {
-  //   const storedUserId = localStorage.getItem("userId") || crypto.randomUUID();
-  //   localStorage.setItem("userId", storedUserId);
-  //   setUserId(storedUserId);
-
-  //   // const storedUserId = localStorage.getItem("userId") || socket.id;
-  //   // localStorage.setItem("userId", storedUserId);
-  //   // setUserId(storedUserId);
-
-  //  // socket.on("connect", () => {
-  //     socket.emit("INIT_CONTAINER", {
-  //       envType: frameworkname,
-  //       userId: storedUserId,
-  //     });
- 
-
-  //   socket.on("OUTPUT", (data) => {
-  //     setOutput((prev) => prev + "\n" + data);
-      
-  //     // if (data.message.includes("Running on http://0.0.0.0:5000")) {
-  //     //   setFlaskRunning(true);
-  //     // }
-  //   },[socket.id]);
-
-  //   socket.on("CONTAINER_CREATED", (data) => {
-  //     console.log(`Your environment is ready at: ${data.url}`);
-  //     const iframe = document.getElementById("containerFrame");
-  //     if (iframe) {
-  //       iframe.src = data.url;
-  //     }
-  //     const link = document.getElementById("url");
-  //     if (link) {
-  //       link.innerText = data.url;
-  //     }
-  //   });
-
-  //   return () => {
-  //     //socket.disconnect();
-  //   };
-  // }, [frameworkname]);
-
   useEffect(() => {
-    // Get the stored userId from localStorage or create a new one
     const storedUserId = localStorage.getItem("userId") || crypto.randomUUID();
     localStorage.setItem("userId", storedUserId);
     setUserId(storedUserId);
   
-    // Emit INIT_CONTAINER event to the backend
     socket.emit("INIT_CONTAINER", {
       envType: frameworkname,
       userId: storedUserId,
     });
   
-    // Listen for the updated userId from the backend
     socket.on("USER_ID_UPDATED", ({ userId }) => {
       console.log("Updated userId received:", userId);
   
-      // Update userId in localStorage and frontend state
       localStorage.setItem("userId", userId);
-      setUserId(userId);  // Update the state with the new userId
+      setUserId(userId);
     });
   
-    // Listen for OUTPUT event from the container and append it to the output
     socket.on("OUTPUT", (data) => {
       setOutput((prev) => prev + "\n" + data);
-      // Optional logic for checking if Flask is running
-      // if (data.message.includes("Running on http://0.0.0.0:5000")) {
-      //   setFlaskRunning(true);
-      // }
     });
   
-    // Listen for CONTAINER_CREATED event and update iframe and link
     socket.on("CONTAINER_CREATED", (data) => {
       console.log(`Your environment is ready at: ${data.url}`);
       seturl(data.url);
-    //  const iframe = document.getElementById("containerFrame");
-      // if (iframe) {
-      //   iframe.src = data.url;
-      // }
       const link = document.getElementById("url");
       if (link) {
         link.innerText = data.url;
@@ -159,26 +95,13 @@ const FetchFiles = () => {
        console.log("nothing here");
       }
     });
-  
-    // Cleanup listener on component unmount
+
     return () => {
       socket.off("USER_ID_UPDATED");
       socket.off("OUTPUT");
       socket.off("CONTAINER_CREATED");
     };
-  }, [frameworkname, socket]);  // Added socket to dependency array to ensure it stays up-to-date
-  
-  useEffect(() => {
-    const onResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
+  }, [frameworkname, socket]); 
   
   useEffect(() => {
     if (!roomId || roomId === "1" || !username || !editor) return;
@@ -207,9 +130,9 @@ const FetchFiles = () => {
       document.querySelectorAll(".username-label").forEach((el) => el.remove());
       const states = Array.from(awareness.getStates().values());
   
-      setDecorations(editor.deltaDecorations(decorations, [])); // Clear old
+      setDecorations(editor.deltaDecorations(decorations, []));
   
-      const isFullScreen = window.innerWidth >= 1000; // Customize threshold if needed
+      const isFullScreen = window.innerWidth >= 1000; 
   
       const newDecorations = states
         .filter((state) => state.cursor && state.name !== username)
@@ -286,7 +209,7 @@ const FetchFiles = () => {
   useEffect(() => {
     if (iframeSrc) {
       const iframe = document.getElementById("outputIframe");
-      iframe.src = iframeSrc; // Ensure the iframe reloads when src changes
+      iframe.src = iframeSrc;
     }
   }, [iframeSrc]);
   
@@ -373,7 +296,6 @@ useEffect(() => {
     setEditorLanguage(languageMap[frameworkname] || "plaintext");
   }, [frameworkname, deleted, newFileAdded, extensions, saved]);
 
-  // Select file to open on editor
   const handleFileSelect = async (fileKey) => {
     setSelectedFile(fileKey);
     try {
@@ -387,7 +309,6 @@ useEffect(() => {
     }
   };
 
-  // save and update code
   const handleCodeChange = (value) => {
     setCode(value);
   };
@@ -410,8 +331,8 @@ useEffect(() => {
     const fileData = {
       type: "SAVE_FILE",
       userId,
-      filename: selectedFile, // Using the selected file from state
-      content: code, // Using the code from state
+      filename: selectedFile,
+      content: code, 
     };
   
     console.log(fileData);
@@ -420,11 +341,6 @@ useEffect(() => {
     } catch (error) {
       console.error("Error in Updating code : ", error);
     }
-
-  
-  
-    
-
   };
 
   // Add a new file
@@ -459,7 +375,7 @@ useEffect(() => {
   };
 
   const handleExitRoom = async () => {
-    socket.emit("exit-room", { roomId, username }); // Notify server
+    socket.emit("exit-room", { roomId, username });
     navigate("/dashboard");
   };
   

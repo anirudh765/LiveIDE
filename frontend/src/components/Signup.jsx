@@ -20,18 +20,14 @@ const SignUp = () => {
       });
   
       if (response.status === 201) {
-        // Navigate to login on successful signup
         navigate("/login");
       } else {
-        // Handle unexpected non-error responses (shouldn't happen here)
         alert("Unexpected response. Please try again.");
       }
     } catch (error) {
       if (error.response?.status === 400) {
-        // Show specific backend error
         alert(error.response.data.message);
       } else {
-        // Generic error for all other cases
         alert("Something went wrong. Please try again!");
       }
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import Image5 from "../Images/Image5.png"
@@ -24,7 +24,7 @@ function FrameworkSelection() {
         const res = await axios.get("http://localhost:5000/me", { withCredentials: true });
         setUsername(res.data.username);
       } catch (error) {
-        setUsername(null); // Reset username if not authenticated\
+        setUsername(null);
         console.log("ERROR : ",error);
       }
      };
@@ -34,8 +34,6 @@ function FrameworkSelection() {
 
     const openFolder = () => {
         try {
-            console.log("folder : ", userFolders);
-            console.log("Selected folder", selectedFolder);
             const folderFramework = selectedFolder.slice(selectedFolder.indexOf(',') + 1,);
             const folder = selectedFolder.slice(0, selectedFolder.indexOf(','));
             folderOpened.current = true;
@@ -48,9 +46,6 @@ function FrameworkSelection() {
 
     const deleteFolder = async () => {
         try {
-          console.log("Current folders:", userFolders);
-          console.log("Selected folder to delete:", selectedFolder);
-      
           const folderFramework = selectedFolder.slice(selectedFolder.indexOf(',') + 1);
           const folder = selectedFolder.slice(0, selectedFolder.indexOf(','));
       
@@ -61,8 +56,6 @@ function FrameworkSelection() {
           }, {
             withCredentials: true
           });
-      
-          console.log(`Deleted folder ${folder} (${folderFramework})`);
           fetchUserFolders();
         } catch (error) {
           console.error("Error deleting folder:", error);
@@ -74,13 +67,12 @@ function FrameworkSelection() {
            await axios.get('http://localhost:5000/logout',{
              withCredentials: true 
            });
-           console.log("Logout successful, navigating now...");
            navigate("/",{ replace: true });
          }catch(error){
             console.error("Error in logout : ",error);
          }
       }
-    // Create a copy folder of the selected framework
+
     const createFolder = async () => {
         if (!folderOpened.current) {
             try {
@@ -96,7 +88,6 @@ function FrameworkSelection() {
                 );
                 folderOpened.current = true;
                 setNewFoldercreated(true);
-                //navigation(selectedFramework, folder);
             } catch (error) {
                 alert("Use another foldername , foldername already exist or Server error");
                 console.log("Error in pushing data to backend : ", error);
@@ -108,12 +99,7 @@ function FrameworkSelection() {
     }
 
     const navigation = (framework, folderName, roomID) => {
-        console.log("Framework in dashboard:", framework);
-        console.log("Folder in dashboard:", folderName);
-        console.log("Room ID in dashboard:", roomID);
-        console.log("Folder Opened:", folderOpened.current);
         if (folderOpened.current) {
-
             navigate(`/${username}/editor/${framework}/${folderName}/${roomID}`);
         } else {
             console.log("No folder created or folder selection invalid");
@@ -130,10 +116,8 @@ function FrameworkSelection() {
     }
 
     const fetchUserFolders = async () => {
-        console.log("username :: ", username);
         try {
             const response = await axios.get(`http://localhost:5000/userFolders/${username}`);
-            console.log(response);
             setUserFolders(response.data);
         } catch (error) {
             console.error("Error in fetching user folders", error);
@@ -141,7 +125,6 @@ function FrameworkSelection() {
     }
 
     useEffect(() => {
-        console.log("USEeffect username : ",username);
         if (username) {
           fetchFrameworks(); 
           fetchUserFolders();
@@ -151,7 +134,6 @@ function FrameworkSelection() {
 
     const handleCreateRoom = async () => {
         try {
-            // Extract folder and framework from selectedFolder
             const folderFramework = selectedFolder.slice(selectedFolder.indexOf(',') + 1);
             const folder = selectedFolder.slice(0, selectedFolder.indexOf(','));
 
@@ -159,12 +141,11 @@ function FrameworkSelection() {
             const response = await axios.post("http://localhost:5000/create-room", {
                 username,
                 roomName,
-                creatorFolder: folder,        // <-- Include creatorFolder
-                creatorFramework: folderFramework, // <-- Include creatorFramework
+                creatorFolder: folder,      
+                creatorFramework: folderFramework, 
             });
     
             const roomId = response.data.roomId;
-            console.log("RoomId:", roomId);
     
             folderOpened.current = true;
             if (roomId) navigation(folderFramework, folder, roomId);
@@ -185,13 +166,10 @@ function FrameworkSelection() {
                 roomId,
                 username
             });
-    
-            console.log("Join Room Response:", response.data);
             const { folderFramework, folderName : folder  } = response.data;
             
             folderOpened.current = true;
             navigation(folderFramework, folder, roomId);
-    
         } catch (err) {
             console.error("Error joining room:", err);
         }
@@ -209,12 +187,6 @@ function FrameworkSelection() {
               <div className="leftRoomContent">
                 <h1>" Start a room instantly and collaborate with your team. "</h1>
                <div className="createRoom">
-                {/*<input
-                    type="text"
-                    placeholder="Enter Room Name"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                />*/}
                 <button onClick={handleCreateRoom} disabled={!username}>
                     New Meeting
                 </button>
